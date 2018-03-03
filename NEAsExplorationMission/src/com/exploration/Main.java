@@ -4,6 +4,8 @@ package com.exploration;
 public class Main {
 
     public static void main(String[] args) {
+        configure();
+
         Terminal terminal = new Terminal();
 
         Menu currentMenu = new MainMenu(terminal);
@@ -16,7 +18,10 @@ public class Main {
                 break;
             }
         }
+    }
 
+    private static void configure() {
+        System.getProperties().setProperty("org.jooq.no-logo", "true");
     }
 }
 

@@ -18,6 +18,10 @@ public abstract class OperationMenu implements Menu {
     public void print() {
         this.terminal.displayLine("What kinds of operation would you like to perform?");
 
+        this.printOperations();
+    }
+
+    void printOperations() {
         for (Operation operation : this.Operations) {
             this.terminal.displayLine(String.format("%d. %s", operation.getChoiceNumber(), operation.getDisplayString()));
         }
@@ -28,7 +32,8 @@ public abstract class OperationMenu implements Menu {
         while (true) {
             this.terminal.display("Enter Your Choice: ");
 
-            int choice = this.terminal.readInteger();
+            int choice = this.terminal.readInt();
+
             Optional<Operation> operation = this.Operations.stream()
                     .filter(o -> o.getChoiceNumber() == choice)
                     .findFirst();

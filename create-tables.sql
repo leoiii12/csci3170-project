@@ -1,40 +1,40 @@
 USE db21;
 
-CREATE TABLE Resource (
-    RType CHAR(2) PRIMARY KEY,
+CREATE TABLE Resources (
+    Type CHAR(2) PRIMARY KEY,
     Density REAL,
     Value REAL
 );
 
-CREATE TABLE NEA (
-    NID CHAR(10) PRIMARY KEY,
+CREATE TABLE NearEarthAsteroids (
+    NeaId CHAR(10) PRIMARY KEY,
     Distance REAL,
     Family CHAR(6),
-    Duration INTEGER(3),
-    Energy REAL,
-    Rtype CHAR(2) DEFAULT NULL,
-    FOREIGN KEY (Rtype) REFERENCES Resource(RType)
+    MinDuration INTEGER(3),
+    MinEnergy REAL,
+    ResourceType CHAR(2) DEFAULT NULL,
+    FOREIGN KEY (ResourceType) REFERENCES Resource(Type)
 );
 
-CREATE TABLE Spacecraft_Model (
-    Agency CHAR(4),
-    MID CHAR(4),
-    Num INTEGER(2),
-    Charge INTEGER(5),
-    Duration INTEGER(3),
-    Energy REAL,
-    Capacity INTEGER(2),
+CREATE TABLE Spacecrafts (
+    AgencyName CHAR(4),
+    ModelId CHAR(4),
+    Count INTEGER(2),
+    DayCharge INTEGER(5),
+    MaxTripTime INTEGER(3),
+    MaxTripEnergy REAL,
+    MaxCapacity INTEGER(2),
     Type CHAR(1),
-    PRIMARY KEY (Agency, MID)
+    PRIMARY KEY (AgencyName, ModelId)
 );
 
-CREATE TABLE RentalRecord (
-    Agency CHAR(4),
-    MID CHAR(4),
-    SNum INTEGER(2),
+CREATE TABLE SpacecraftRentalRecords (
+    AgencyName CHAR(4),
+    ModelId CHAR(4),
+    SpacecraftIndex INTEGER(2),
     CheckoutDate DATE,
     ReturnDate DATE DEFAULT NULL,
-    PRIMARY KEY (Agency, MID, SNum),
-    FOREIGN KEY (Agency, MID)
-    REFERENCES Spacecraft_Model(Agency, MID)
+    PRIMARY KEY (AgencyName, ModelId, SpacecraftIndex),
+    FOREIGN KEY (AgencyName, ModelId)
+    REFERENCES Spacecraft_Model(AgencyName, ModelId)
 );

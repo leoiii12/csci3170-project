@@ -16,9 +16,24 @@ public class Terminal {
         System.out.println();
     }
 
-    public int readInteger() {
+    public void displayError(String string) {
+        System.err.println("[ERROR]: " + string);
+        System.err.flush();
+    }
+
+    public int readInt() {
         Scanner scanner = new Scanner(System.in);
         return scanner.nextInt();
+    }
+
+    public double readDouble() {
+        Scanner scanner = new Scanner(System.in);
+        return scanner.nextDouble();
+    }
+
+    public String readString() {
+        Scanner scanner = new Scanner(System.in);
+        return scanner.next();
     }
 
 }
