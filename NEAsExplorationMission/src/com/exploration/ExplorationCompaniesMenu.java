@@ -4,6 +4,9 @@ import org.jooq.CSVFormat;
 import org.jooq.DSLContext;
 import org.jooq.Record;
 import org.jooq.Result;
+import org.jooq.impl.DSL;
+import org.jooq.util.mariadb.MariaDBDataType;
+import org.jooq.util.mysql.MySQLDataType;
 
 import java.sql.Connection;
 import java.sql.SQLException;
@@ -31,7 +34,7 @@ public class ExplorationCompaniesMenu extends OperationMenu {
             return this.getCurrentMenu();
         }));
         this.Operations.add(new Operation("The most beneficial NEA exploration mission design", 4, () -> {
-
+            this.listMostBeneficialSpacecraftForMission();
 
             return this.getCurrentMenu();
         }));
@@ -63,7 +66,8 @@ public class ExplorationCompaniesMenu extends OperationMenu {
 
             Record record = null;
 
-            record = create.select()
+            record = create
+                    .select()
                     .from(NEAREARTHASTEROIDS)
                     .where(NEAREARTHASTEROIDS.NEAID.eq(neaId))
                     .fetchOne();
@@ -78,7 +82,8 @@ public class ExplorationCompaniesMenu extends OperationMenu {
             double minEnergy = record.get(NEAREARTHASTEROIDS.MINENERGY);
             String resourceType = record.get(NEAREARTHASTEROIDS.RESOURCETYPE);
 
-            record = create.select()
+            record = create
+                    .select()
                     .from(RESOURCES)
                     .where(RESOURCES.TYPE.eq(resourceType))
                     .fetchOne();
@@ -90,12 +95,12 @@ public class ExplorationCompaniesMenu extends OperationMenu {
             double density = record.get(RESOURCES.DENSITY);
             double value = record.get(RESOURCES.VALUE);
 
-            Result result = create.select(
-                    SPACECRAFTS.AGENCYNAME,
-                    SPACECRAFTS.MODELID,
-                    SPACECRAFTRENTALRECORDS.SPACECRAFTINDEX,
-                    SPACECRAFTS.DAYCHARGE.multiply(minDuration).as("Cost"),
-                    SPACECRAFTS.MAXCAPACITY.multiply(value * density).subtract(SPACECRAFTS.DAYCHARGE.multiply(minDuration)).as("Benefit"))
+            Result result = create
+                    .select(SPACECRAFTS.AGENCYNAME,
+                            SPACECRAFTS.MODELID,
+                            SPACECRAFTRENTALRECORDS.SPACECRAFTINDEX,
+                            SPACECRAFTS.DAYCHARGE.multiply(minDuration).as("Cost"),
+                            SPACECRAFTS.MAXCAPACITY.cast(MariaDBDataType.BIGINT).multiply(value * density * 1000000).subtract(SPACECRAFTS.DAYCHARGE.multiply(minDuration)).as("Benefit"))
                     .from(SPACECRAFTRENTALRECORDS
                             .leftJoin(SPACECRAFTS)
                             .on(SPACECRAFTRENTALRECORDS.AGENCYNAME.eq(SPACECRAFTS.AGENCYNAME)
@@ -104,10 +109,69 @@ public class ExplorationCompaniesMenu extends OperationMenu {
                             .and(SPACECRAFTS.MAXTRIPTIME.ge(minDuration))
                             .and(SPACECRAFTS.MAXTRIPENERGY.ge(minEnergy))
                             .and(SPACECRAFTRENTALRECORDS.RETURNDATE.isNotNull()))
+                    .orderBy(DSL.field("Benefit").desc())
                     .fetch();
 
             if (result.isEmpty()) {
-                throw new Exception("No spacecraft fulfils the condition.");
+                throw new Exception("No plan fulfils the conditions.");
+            } else {
+                this.terminal.display(result.formatCSV(new CSVFormat().nullString("null")));
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        } catch (Exception e) {
+            this.terminal.displayError(e.getMessage());
+        }
+    }
+
+    private void listMostBeneficialSpacecraftForMission() {
+        this.terminal.display("Type in the budget: ");
+        int budget = this.terminal.readInt();
+
+        this.terminal.display("Type in the resource type: ");
+        String resourceType = this.terminal.readString();
+
+        try (Connection conn = Database.getConnection()) {
+            DSLContext create = Database.getContext(conn);
+
+            Record record = create
+                    .select()
+                    .from(RESOURCES)
+                    .where(RESOURCES.TYPE.eq(resourceType))
+                    .fetchOne();
+
+            if (record == null) {
+                throw new Exception("No resource type is matched.");
+            }
+
+            double density = record.get(RESOURCES.DENSITY);
+            double value = record.get(RESOURCES.VALUE);
+
+            Result result = create
+                    .select(NEAREARTHASTEROIDS.NEAID,
+                            NEAREARTHASTEROIDS.FAMILY,
+                            SPACECRAFTS.AGENCYNAME,
+                            SPACECRAFTS.MODELID,
+                            SPACECRAFTRENTALRECORDS.SPACECRAFTINDEX,
+                            NEAREARTHASTEROIDS.MINDURATION,
+                            SPACECRAFTS.DAYCHARGE.multiply(NEAREARTHASTEROIDS.MINDURATION).as("Cost"),
+                            SPACECRAFTS.MAXCAPACITY.cast(MySQLDataType.BIGINT).multiply(value * density * 1000000).subtract(SPACECRAFTS.DAYCHARGE.multiply(NEAREARTHASTEROIDS.MINDURATION)).as("Benefit"))
+                    .from(SPACECRAFTRENTALRECORDS
+                            .leftJoin(SPACECRAFTS)
+                            .on(SPACECRAFTRENTALRECORDS.AGENCYNAME.eq(SPACECRAFTS.AGENCYNAME)
+                                    .and(SPACECRAFTRENTALRECORDS.MODELID.eq(SPACECRAFTS.MODELID)))
+                            .join(NEAREARTHASTEROIDS)
+                            .on(SPACECRAFTS.MAXTRIPTIME.ge(NEAREARTHASTEROIDS.MINDURATION)
+                                    .and(SPACECRAFTS.MAXTRIPENERGY.ge(NEAREARTHASTEROIDS.MINENERGY))))
+                    .where(SPACECRAFTS.TYPE.eq("A")
+                            .and(SPACECRAFTRENTALRECORDS.RETURNDATE.isNotNull()))
+                    .having(DSL.field("Cost").le(budget))
+                    .orderBy(DSL.field("Benefit").desc())
+                    .limit(1)
+                    .fetch();
+
+            if (result.isEmpty()) {
+                throw new Exception("No plan fulfils the conditions.");
             } else {
                 this.terminal.display(result.formatCSV(new CSVFormat().nullString("null")));
             }
@@ -168,7 +232,8 @@ class NearEarthAsteroidSearchMenu extends OperationMenu {
         try (Connection conn = Database.getConnection()) {
             DSLContext create = Database.getContext(conn);
 
-            Result<Record> result = create.select()
+            Result<Record> result = create
+                    .select()
                     .from(NEAREARTHASTEROIDS)
                     .where(NEAREARTHASTEROIDS.NEAID.eq(id))
                     .fetch();
@@ -180,6 +245,8 @@ class NearEarthAsteroidSearchMenu extends OperationMenu {
             }
         } catch (SQLException e) {
             e.printStackTrace();
+        } catch (Exception e) {
+            this.terminal.displayError(e.getMessage());
         }
     }
 
@@ -190,7 +257,8 @@ class NearEarthAsteroidSearchMenu extends OperationMenu {
         try (Connection conn = Database.getConnection()) {
             DSLContext create = Database.getContext(conn);
 
-            Result<Record> result = create.select()
+            Result<Record> result = create
+                    .select()
                     .from(NEAREARTHASTEROIDS)
                     .where(NEAREARTHASTEROIDS.FAMILY.eq(family))
                     .fetch();
@@ -202,6 +270,8 @@ class NearEarthAsteroidSearchMenu extends OperationMenu {
             }
         } catch (SQLException e) {
             e.printStackTrace();
+        } catch (Exception e) {
+            this.terminal.displayError(e.getMessage());
         }
     }
 
@@ -212,7 +282,8 @@ class NearEarthAsteroidSearchMenu extends OperationMenu {
         try (Connection conn = Database.getConnection()) {
             DSLContext create = Database.getContext(conn);
 
-            Result<Record> result = create.select()
+            Result<Record> result = create
+                    .select()
                     .from(NEAREARTHASTEROIDS)
                     .where(NEAREARTHASTEROIDS.RESOURCETYPE.eq(nid))
                     .fetch();
@@ -224,6 +295,8 @@ class NearEarthAsteroidSearchMenu extends OperationMenu {
             }
         } catch (SQLException e) {
             e.printStackTrace();
+        } catch (Exception e) {
+            this.terminal.displayError(e.getMessage());
         }
     }
 
@@ -300,6 +373,8 @@ class SpacecraftSearchMenu extends OperationMenu {
             }
         } catch (SQLException e) {
             e.printStackTrace();
+        } catch (Exception e) {
+            this.terminal.displayError(e.getMessage());
         }
     }
 
@@ -322,6 +397,8 @@ class SpacecraftSearchMenu extends OperationMenu {
             }
         } catch (SQLException e) {
             e.printStackTrace();
+        } catch (Exception e) {
+            this.terminal.displayError(e.getMessage());
         }
     }
 
@@ -344,6 +421,8 @@ class SpacecraftSearchMenu extends OperationMenu {
             }
         } catch (SQLException e) {
             e.printStackTrace();
+        } catch (Exception e) {
+            this.terminal.displayError(e.getMessage());
         }
     }
 
@@ -366,6 +445,8 @@ class SpacecraftSearchMenu extends OperationMenu {
             }
         } catch (SQLException e) {
             e.printStackTrace();
+        } catch (Exception e) {
+            this.terminal.displayError(e.getMessage());
         }
     }
 
@@ -388,6 +469,8 @@ class SpacecraftSearchMenu extends OperationMenu {
             }
         } catch (SQLException e) {
             e.printStackTrace();
+        } catch (Exception e) {
+            this.terminal.displayError(e.getMessage());
         }
     }
 

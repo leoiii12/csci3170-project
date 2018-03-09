@@ -70,12 +70,12 @@ public class AdministratorMenu extends OperationMenu {
 
         List<String> sqls = new ArrayList<>();
 
-        sqls.add("CREATE TABLE Resources (\n" +
+        sqls.add("CREATE TABLE IF NOT EXISTS Resources (\n" +
                 "    Type CHAR(2) PRIMARY KEY,\n" +
                 "    Density REAL,\n" +
                 "    Value REAL\n" +
                 ");");
-        sqls.add("CREATE TABLE NearEarthAsteroids (\n" +
+        sqls.add("CREATE TABLE IF NOT EXISTS NearEarthAsteroids (\n" +
                 "    NeaId CHAR(10) PRIMARY KEY,\n" +
                 "    Distance REAL,\n" +
                 "    Family CHAR(6),\n" +
@@ -84,7 +84,7 @@ public class AdministratorMenu extends OperationMenu {
                 "    ResourceType CHAR(2) DEFAULT NULL,\n" +
                 "    FOREIGN KEY (ResourceType) REFERENCES Resources(Type)\n" +
                 ");");
-        sqls.add("CREATE TABLE Spacecrafts (\n" +
+        sqls.add("CREATE TABLE IF NOT EXISTS Spacecrafts (\n" +
                 "    AgencyName CHAR(4),\n" +
                 "    ModelId CHAR(4),\n" +
                 "    Count INTEGER(2),\n" +
@@ -95,7 +95,7 @@ public class AdministratorMenu extends OperationMenu {
                 "    Type CHAR(1),\n" +
                 "    PRIMARY KEY (AgencyName, ModelId)\n" +
                 ");");
-        sqls.add("CREATE TABLE SpacecraftRentalRecords (\n" +
+        sqls.add("CREATE TABLE IF NOT EXISTS SpacecraftRentalRecords (\n" +
                 "    AgencyName CHAR(4),\n" +
                 "    ModelId CHAR(4),\n" +
                 "    SpacecraftIndex INTEGER(2),\n" +
@@ -109,8 +109,10 @@ public class AdministratorMenu extends OperationMenu {
         try {
             Database.executeSqls(sqls);
 
-            this.terminal.displayLine("Done. Created all tables, Resources, NearEarthAsteroids, Spacecrafts, SpacecraftRentalRecords.");
+            this.terminal.displayLine("Done. Database is initialized.");
         } catch (SQLException e) {
+            e.printStackTrace();
+        } catch (Exception e) {
             this.terminal.displayError("Failed. " + e.getMessage());
         }
     }
@@ -120,16 +122,18 @@ public class AdministratorMenu extends OperationMenu {
 
         List<String> sqls = new ArrayList<>();
 
-        sqls.add("DROP TABLE SpacecraftRentalRecords;");
-        sqls.add("DROP TABLE Spacecrafts;");
-        sqls.add("DROP TABLE NearEarthAsteroids;");
-        sqls.add("DROP TABLE Resources;");
+        sqls.add("DROP TABLE IF EXISTS SpacecraftRentalRecords;");
+        sqls.add("DROP TABLE IF EXISTS Spacecrafts;");
+        sqls.add("DROP TABLE IF EXISTS NearEarthAsteroids;");
+        sqls.add("DROP TABLE IF EXISTS Resources;");
 
         try {
             Database.executeSqls(sqls);
 
-            this.terminal.displayLine("Done. Deleted all tables.");
+            this.terminal.displayLine("Done. Database is cleaned.");
         } catch (SQLException e) {
+            e.printStackTrace();
+        } catch (Exception e) {
             this.terminal.displayError("Failed. " + e.getMessage());
         }
     }
@@ -155,6 +159,8 @@ public class AdministratorMenu extends OperationMenu {
             this.terminal.displayLine("Done All.");
         } catch (IOException e) {
             this.terminal.displayError("Failed. Some files cannot be accessed.");
+        } catch (Exception e) {
+            this.terminal.displayError("Failed. " + e.getMessage());
         }
     }
 
@@ -189,6 +195,8 @@ public class AdministratorMenu extends OperationMenu {
             this.terminal.displayLine("SpacecraftRentalRecords: " + count);
         } catch (SQLException e) {
             e.printStackTrace();
+        } catch (Exception e) {
+            this.terminal.displayError("Failed. " + e.getMessage());
         }
     }
 

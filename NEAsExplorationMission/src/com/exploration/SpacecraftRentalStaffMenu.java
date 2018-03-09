@@ -65,7 +65,8 @@ public class SpacecraftRentalStaffMenu extends OperationMenu {
         try (Connection conn = Database.getConnection()) {
             DSLContext create = Database.getContext(conn);
 
-            Result<Record> result = create.select()
+            Result<Record> result = create
+                    .select()
                     .from(SPACECRAFTRENTALRECORDS)
                     .where(SPACECRAFTRENTALRECORDS.AGENCYNAME.eq(agencyName)
                             .and(SPACECRAFTRENTALRECORDS.MODELID.eq(modelId))
@@ -74,15 +75,16 @@ public class SpacecraftRentalStaffMenu extends OperationMenu {
 
 
             if (result.isEmpty()) {
-                // TODO
+                throw new Exception("Rental not possible because the spacecraft is not found.");
             } else {
                 for (Record record : result) {
                     Date returnDate = record.get(SPACECRAFTRENTALRECORDS.RETURNDATE);
 
                     if (returnDate == null) {
-                        // TODO
+                        throw new Exception("Rental not possible because the spacecraft has not yet been returned.");
                     } else {
-                        create.update(SPACECRAFTRENTALRECORDS)
+                        create
+                                .update(SPACECRAFTRENTALRECORDS)
                                 .set(SPACECRAFTRENTALRECORDS.CHECKOUTDATE, DSL.currentDate())
                                 .set(SPACECRAFTRENTALRECORDS.RETURNDATE, (Date) null)
                                 .where(SPACECRAFTRENTALRECORDS.AGENCYNAME.eq(agencyName)
@@ -96,6 +98,8 @@ public class SpacecraftRentalStaffMenu extends OperationMenu {
             }
         } catch (SQLException e) {
             e.printStackTrace();
+        } catch (Exception e) {
+            this.terminal.displayError(e.getMessage());
         }
     }
 
@@ -109,27 +113,26 @@ public class SpacecraftRentalStaffMenu extends OperationMenu {
         this.terminal.display("Enter the spacecraft index: ");
         int spacecraftIndex = this.terminal.readInt();
 
-        // TODO if not exist
-
         try (Connection conn = Database.getConnection()) {
             DSLContext create = Database.getContext(conn);
 
-            Result<Record> result = create.select()
+            Result<Record> result = create
+                    .select()
                     .from(SPACECRAFTRENTALRECORDS)
                     .where(SPACECRAFTRENTALRECORDS.AGENCYNAME.eq(agencyName)
                             .and(SPACECRAFTRENTALRECORDS.MODELID.eq(modelId))
                             .and(SPACECRAFTRENTALRECORDS.SPACECRAFTINDEX.eq(spacecraftIndex)))
                     .fetch();
 
-
             if (result.isEmpty()) {
-                // TODO
+                throw new Exception("Return not possible because the spacecraft is not found.");
             } else {
                 for (Record record : result) {
                     Date returnDate = record.get(SPACECRAFTRENTALRECORDS.RETURNDATE);
 
                     if (returnDate == null) {
-                        create.update(SPACECRAFTRENTALRECORDS)
+                        create
+                                .update(SPACECRAFTRENTALRECORDS)
                                 .set(SPACECRAFTRENTALRECORDS.RETURNDATE, DSL.currentDate())
                                 .where(SPACECRAFTRENTALRECORDS.AGENCYNAME.eq(agencyName)
                                         .and(SPACECRAFTRENTALRECORDS.MODELID.eq(modelId))
@@ -137,13 +140,13 @@ public class SpacecraftRentalStaffMenu extends OperationMenu {
                                 .execute();
 
                         this.terminal.displayLine("Spacecraft returned successfully!");
-                    } else {
-                        // TODO
                     }
                 }
             }
         } catch (SQLException e) {
             e.printStackTrace();
+        } catch (Exception e) {
+            this.terminal.displayError(e.getMessage());
         }
     }
 
@@ -157,7 +160,11 @@ public class SpacecraftRentalStaffMenu extends OperationMenu {
         try (Connection conn = Database.getConnection()) {
             DSLContext create = Database.getContext(conn);
 
-            Result result = create.select(SPACECRAFTRENTALRECORDS.AGENCYNAME, SPACECRAFTRENTALRECORDS.MODELID, SPACECRAFTRENTALRECORDS.SPACECRAFTINDEX, SPACECRAFTRENTALRECORDS.CHECKOUTDATE)
+            Result result = create
+                    .select(SPACECRAFTRENTALRECORDS.AGENCYNAME,
+                            SPACECRAFTRENTALRECORDS.MODELID,
+                            SPACECRAFTRENTALRECORDS.SPACECRAFTINDEX,
+                            SPACECRAFTRENTALRECORDS.CHECKOUTDATE)
                     .from(SPACECRAFTRENTALRECORDS)
                     .where(SPACECRAFTRENTALRECORDS.RETURNDATE.isNull()
                             .and(SPACECRAFTRENTALRECORDS.CHECKOUTDATE.between(getDate(startingDate), getDate(endingDate))))
@@ -171,6 +178,8 @@ public class SpacecraftRentalStaffMenu extends OperationMenu {
             }
         } catch (SQLException e) {
             e.printStackTrace();
+        } catch (Exception e) {
+            this.terminal.displayError(e.getMessage());
         }
     }
 
@@ -178,7 +187,9 @@ public class SpacecraftRentalStaffMenu extends OperationMenu {
         try (Connection conn = Database.getConnection()) {
             DSLContext create = Database.getContext(conn);
 
-            Result result = create.select(SPACECRAFTRENTALRECORDS.AGENCYNAME, count().as("Count"))
+            Result result = create
+                    .select(SPACECRAFTRENTALRECORDS.AGENCYNAME,
+                            count().as("Count"))
                     .from(SPACECRAFTRENTALRECORDS)
                     .where(SPACECRAFTRENTALRECORDS.RETURNDATE.isNull())
                     .groupBy(SPACECRAFTRENTALRECORDS.AGENCYNAME)
@@ -187,6 +198,8 @@ public class SpacecraftRentalStaffMenu extends OperationMenu {
             this.terminal.display(result.formatCSV(new CSVFormat().nullString("null")));
         } catch (SQLException e) {
             e.printStackTrace();
+        } catch (Exception e) {
+            this.terminal.displayError(e.getMessage());
         }
     }
 
