@@ -11,7 +11,7 @@ import java.util.List;
 public class Database {
 
     public static Connection getConnection() throws SQLException {
-        return DriverManager.getConnection("jdbc:mysql://localhost:2312/db21", "Group21", "CSCI3170");
+        return DriverManager.getConnection("jdbc:mysql://projgw.cse.cuhk.edu.hk:2312/db21", "Group21", "CSCI3170");
     }
 
     public static DSLContext getContext(Connection conn) {
