@@ -23,12 +23,42 @@ public class Terminal {
 
     public int readInt() {
         Scanner scanner = new Scanner(System.in);
-        return scanner.nextInt();
+
+        int input;
+
+        while (true) {
+            try {
+                input = scanner.nextInt();
+
+                break;
+            } catch (Exception e) {
+                scanner.next();
+
+                displayError("Please provide an integer.");
+            }
+        }
+
+        return input;
     }
 
     public double readDouble() {
         Scanner scanner = new Scanner(System.in);
-        return scanner.nextDouble();
+
+        int input;
+
+        while (true) {
+            try {
+                input = scanner.nextInt();
+
+                break;
+            } catch (Exception e) {
+                scanner.next();
+
+                displayError("Please provide a double.");
+            }
+        }
+
+        return input;
     }
 
     public String readString() {
